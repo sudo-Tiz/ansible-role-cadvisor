@@ -1,0 +1,51 @@
+#jinja2: lstrip_blocks: "True"
+[Unit]
+Description={{ cadvisor_identifier }}
+{% for service in cadvisor_systemd_required_services_list %}
+Requires={{ service }}
+After={{ service }}
+{% endfor %}
+{% for service in cadvisor_systemd_wanted_services_list %}
+Wants={{ service }}
+{% endfor %}
+DefaultDependencies=no
+
+[Service]
+Type=simple
+Environment="HOME={{ devture_systemd_docker_base_systemd_unit_home_path }}"
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop --time={{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ cadvisor_identifier }} 2>/dev/null || true'
+ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ cadvisor_identifier }} 2>/dev/null || true'
+
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create --rm --name {{ cadvisor_identifier }} \
+			--log-driver=none \
+			--user={{ cadvisor_uid }}:{{ cadvisor_gid }} \
+			--cap-drop=ALL \
+      --privileged \
+			--read-only \
+			{% for arg in cadvisor_container_extra_arguments %}
+			{{ arg }} \
+			{% endfor %}
+			--network={{ cadvisor_container_network }} \
+			{% if cadvisor_container_http_host_bind_port %}
+			-p {{ cadvisor_container_http_host_bind_port }}:8080 \
+			{% endif %}
+			--pid=host \
+			--label-file={{ cadvisor_base_path }}/labels \
+			{{ cadvisor_docker_image }} \
+			{{ cadvisor_process_extra_arguments|join(' ') }}
+
+{% for network in cadvisor_container_additional_networks %}
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} network connect {{ network }} {{ cadvisor_identifier }}
+{% endfor %}
+
+ExecStart={{ devture_systemd_docker_base_host_command_docker }} start --attach {{ cadvisor_identifier }}
+
+
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop --time={{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ cadvisor_identifier }} 2>/dev/null || true'
+ExecStop=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ cadvisor_identifier }} 2>/dev/null || true'
+Restart=always
+RestartSec=30
+SyslogIdentifier={{ cadvisor_identifier }}
+
+[Install]
+WantedBy=multi-user.target

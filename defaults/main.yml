@@ -1,0 +1,112 @@
+---
+# Project source code URL: https://github.com/prometheus/node_exporter
+
+cadvisor_enabled: true
+cadvisor_identifier: cadvisor
+
+cadvisor_uid: ''
+cadvisor_gid: ''
+
+# You don't need to configure a hostname and path prefix if you're not exposing this.
+cadvisor_hostname: ''
+cadvisor_path_prefix: "/metrics/cadvisor"
+
+cadvisor_version: v0.49.1
+cadvisor_docker_image: "{{ cadvisor_docker_image_name_prefix }}cadvisor/cadvisor:{{ cadvisor_version }}"
+cadvisor_docker_image_name_prefix: "gcr.io/"
+cadvisor_docker_image_force_pull: "{{ cadvisor_docker_image.endswith(':latest') }}"
+
+# A path on host where all related files will be saved
+cadvisor_base_path: "/{{ cadvisor_identifier }}"
+
+# The base container network
+#
+# Official recommendations are to run this container with `--net=host`,
+# but we don't do that, since it:
+# - exposes the metrics web server way too publicly (we'd potentially like to add HTTP Basic Auth, etc.)
+# - or listens on a loopback interface only (--net=host and 127.0.0.1:9100), which is not reachable from a local Prometheus container
+#
+# Not using `--net=host` means that our network statistic reports are likely broken (inaccurate),
+# because node-exporter can't see all interfaces, etc.
+# For now, we'll live with that, until someone develops a better solution.
+cadvisor_container_network: "{{ cadvisor_identifier }}"
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+#
+# Use this to expose this container to another reverse proxy, which runs in a different container network,
+# without exposing all other container services to that other reverse-proxy.
+#
+# For background, see: https://github.com/spantaleev/matrix-docker-ansible-deploy/issues/1498
+cadvisor_container_additional_networks: "{{ (cadvisor_container_additional_networks_auto + cadvisor_container_additional_networks_custom) | unique }}"
+cadvisor_container_additional_networks_auto: []
+cadvisor_container_additional_networks_custom: []
+
+# A list of extra arguments to pass to the container
+cadvisor_container_extra_arguments: "{{ cadvisor_container_extra_arguments_auto + cadvisor_container_extra_arguments_custom }}"
+cadvisor_container_extra_arguments_auto:
+  --mount type=bind,source=/,destination=/rootfs,readonly
+  --mount type=bind,source=/var/run,destination=/var/run,readonly
+  --mount type=bind,source=/sys,destination=/sys,readonly
+  --mount type=bind,source=/var/lib/docker/,destination=/var/lib/docker,readonly
+  --mount type=bind,source=/dev/disk/,destination=/dev/disk,readonly
+  --mount type=bind,source=/dev/kmsg,target=/dev/kmsg
+cadvisor_container_extra_arguments_custom: []
+
+# A list of extra arguments to pass to the node_exporter process
+#
+# Example:
+# cadvisor_process_extra_arguments:
+# --url_base_prefix=/: optional path prefix aded to all resource URLs; useful when running cAdvisor behind a proxy. (default /)
+#
+# Note: the above is just an example. Various collectors may require various tweaks to be able to run.
+# See https://github.com/google/cadvisor/blob/master/docs/runtime_options.md for more options
+cadvisor_process_extra_arguments: "{{ cadvisor_process_extra_arguments_auto + cadvisor_process_extra_arguments_custom }}"
+cadvisor_process_extra_arguments_auto:
+  "--url_base_prefix={{ cadvisor_container_labels_traefik_path_prefix }}"
+cadvisor_process_extra_arguments_custom: []
+
+# List of systemd services that cadvisor.service depends on
+cadvisor_systemd_required_services_list: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+
+# List of systemd services that cadvisor.service wants
+cadvisor_systemd_wanted_services_list: []
+
+# cadvisor_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/labels.j2` for details.
+#
+# To inject your own other container labels, see `cadvisor_container_labels_additional_labels`.
+cadvisor_container_labels_traefik_enabled: "{{ true if cadvisor_hostname else false }}"
+cadvisor_container_labels_traefik_docker_network: "{{ cadvisor_container_network }}"
+cadvisor_container_labels_traefik_hostname: "{{ cadvisor_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/metrics`).
+cadvisor_container_labels_traefik_path_prefix: "{{ cadvisor_path_prefix }}"
+cadvisor_container_labels_traefik_rule: "Host(`{{ cadvisor_container_labels_traefik_hostname }}`) && PathPrefix(`{{ cadvisor_container_labels_traefik_path_prefix | quote }}`)"
+cadvisor_container_labels_traefik_entrypoints: web-secure
+cadvisor_container_labels_traefik_tls: "{{ cadvisor_container_labels_traefik_entrypoints != 'web' }}"
+cadvisor_container_labels_traefik_tls_certResolver: default  # noqa var-naming
+cadvisor_container_labels_metrics_middleware_basic_auth_enabled: false
+# See: https://doc.traefik.io/traefik/middlewares/http/basicauth/#users
+cadvisor_container_labels_metrics_middleware_basic_auth_users: ''
+
+# cadvisor_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+#
+# Example:
+# cadvisor_container_labels_additional_labels: |
+#   my.label=1
+#   another.label="here"
+cadvisor_container_labels_additional_labels: ''
+
+# A port number in the container
+cadvisor_container_http_port: 8080
+
+# Controls whether the cadvisor container exposes its HTTP port (tcp/9100 in the container).
+# Takes an "<ip>:<port>" value (e.g. "127.0.0.1:9100"), just a port number or empty string to not expose.
+cadvisor_container_http_host_bind_port: ''
+
+# cadvisor_dashboard_urls contains a list of URLs with Grafana dashboard definitions for the node exporter.
+# This role doesn't make use of this variable, but you can hook this into other roles.
+cadvisor_dashboard_urls:
+  - https://grafana.com/api/dashboards/14282/revisions/1/download
+  - https://grafana.com/api/dashboards/193/revisions/1/download

@@ -1,0 +1,24 @@
+---
+- name: Check existence of cadvisor service
+  ansible.builtin.stat:
+    path: "{{ devture_systemd_docker_base_systemd_path }}/{{ cadvisor_identifier }}.service"
+  register: cadvisor_service_stat
+
+- name: Ensure cadvisor is removed
+  when: cadvisor_service_stat.stat.exists | bool
+  block:
+    - name: Ensure cadvisor is stopped
+      ansible.builtin.service:
+        name: "{{ cadvisor_identifier }}"
+        state: stopped
+        enabled: false
+        daemon_reload: true
+    - name: Ensure cadvisor service doesn't exist
+      ansible.builtin.file:
+        path: "{{ devture_systemd_docker_base_systemd_path }}/{{ cadvisor_identifier }}.service"
+        state: absent
+
+    - name: Ensure cadvisor base path doesn't exist
+      ansible.builtin.file:
+        path: "{{ cadvisor_base_path }}"
+        state: absent

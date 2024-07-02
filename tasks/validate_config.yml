@@ -1,0 +1,22 @@
+---
+
+- name: Fail if required cadvisor settings not defined
+  ansible.builtin.fail:
+    msg: >-
+      You need to define a required configuration setting (`{{ item }}`).
+  when: "vars[item] == ''"
+  with_items:
+    - cadvisor_uid
+    - cadvisor_gid
+    - cadvisor_container_network
+
+- when: cadvisor_container_labels_traefik_enabled | bool
+  block:
+    - name: Fail if required cadvisor Traefik settings not defined
+      ansible.builtin.fail:
+        msg: >-
+          You need to define a required configuration setting (`{{ item }}`).
+      when: "vars[item] == ''"
+      with_items:
+        - cadvisor_container_labels_traefik_hostname
+        - cadvisor_container_labels_traefik_path_prefix

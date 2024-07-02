@@ -1,0 +1,36 @@
+{% if cadvisor_container_labels_traefik_enabled %}
+traefik.enable=true
+
+{% if cadvisor_container_labels_traefik_docker_network %}
+traefik.docker.network={{ cadvisor_container_labels_traefik_docker_network }}
+{% endif %}
+
+traefik.http.services.{{ cadvisor_identifier }}.loadbalancer.server.port={{ cadvisor_container_http_port }}
+
+{% set middlewares = [] %}
+
+{% if cadvisor_container_labels_metrics_middleware_basic_auth_enabled %}
+{% set middlewares = middlewares + [cadvisor_identifier + '-basic-auth'] %}
+traefik.http.middlewares.{{ cadvisor_identifier }}-basic-auth.basicauth.users={{ cadvisor_container_labels_metrics_middleware_basic_auth_users }}
+{% endif %}
+
+{% set middlewares = middlewares + [cadvisor_identifier + '-replacepath'] %}
+traefik.http.middlewares.{{ cadvisor_identifier }}-replacepath.replacepath.path=/metrics
+
+traefik.http.routers.{{ cadvisor_identifier }}.rule={{ cadvisor_container_labels_traefik_rule }}
+
+{% if middlewares | length > 0 %}
+traefik.http.routers.{{ cadvisor_identifier }}.middlewares={{ middlewares | join(',') }}
+{% endif %}
+
+traefik.http.routers.{{ cadvisor_identifier }}.service={{ cadvisor_identifier }}
+traefik.http.routers.{{ cadvisor_identifier }}.entrypoints={{ cadvisor_container_labels_traefik_entrypoints }}
+
+
+traefik.http.routers.{{ cadvisor_identifier }}.tls={{ cadvisor_container_labels_traefik_tls | to_json }}
+{% if cadvisor_container_labels_traefik_tls %}
+traefik.http.routers.{{ cadvisor_identifier }}.tls.certResolver={{ cadvisor_container_labels_traefik_tls_certResolver }}
+{% endif %}
+{% endif %}
+
+{{ cadvisor_container_labels_additional_labels }}
