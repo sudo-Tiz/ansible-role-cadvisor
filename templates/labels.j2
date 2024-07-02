@@ -14,9 +14,6 @@ traefik.http.services.{{ cadvisor_identifier }}.loadbalancer.server.port={{ cadv
 traefik.http.middlewares.{{ cadvisor_identifier }}-basic-auth.basicauth.users={{ cadvisor_container_labels_metrics_middleware_basic_auth_users }}
 {% endif %}
 
-{% set middlewares = middlewares + [cadvisor_identifier + '-replacepath'] %}
-traefik.http.middlewares.{{ cadvisor_identifier }}-replacepath.replacepath.path=/metrics
-
 traefik.http.routers.{{ cadvisor_identifier }}.rule={{ cadvisor_container_labels_traefik_rule }}
 
 {% if middlewares | length > 0 %}
