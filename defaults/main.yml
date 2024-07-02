@@ -44,13 +44,7 @@ cadvisor_container_additional_networks_custom: []
 
 # A list of extra arguments to pass to the container
 cadvisor_container_extra_arguments: "{{ cadvisor_container_extra_arguments_auto + cadvisor_container_extra_arguments_custom }}"
-cadvisor_container_extra_arguments_auto:
-  --mount type=bind,source=/,destination=/rootfs,readonly
-  --mount type=bind,source=/var/run,destination=/var/run,readonly
-  --mount type=bind,source=/sys,destination=/sys,readonly
-  --mount type=bind,source=/var/lib/docker/,destination=/var/lib/docker,readonly
-  --mount type=bind,source=/dev/disk/,destination=/dev/disk,readonly
-  --mount type=bind,source=/dev/kmsg,target=/dev/kmsg
+cadvisor_container_extra_arguments_auto: []
 cadvisor_container_extra_arguments_custom: []
 
 # A list of extra arguments to pass to the node_exporter process
@@ -62,8 +56,7 @@ cadvisor_container_extra_arguments_custom: []
 # Note: the above is just an example. Various collectors may require various tweaks to be able to run.
 # See https://github.com/google/cadvisor/blob/master/docs/runtime_options.md for more options
 cadvisor_process_extra_arguments: "{{ cadvisor_process_extra_arguments_auto + cadvisor_process_extra_arguments_custom }}"
-cadvisor_process_extra_arguments_auto:
-  "--url_base_prefix={{ cadvisor_container_labels_traefik_path_prefix }}"
+cadvisor_process_extra_arguments_auto: []
 cadvisor_process_extra_arguments_custom: []
 
 # List of systemd services that cadvisor.service depends on
