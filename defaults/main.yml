@@ -101,5 +101,4 @@ cadvisor_container_http_host_bind_port: ''
 # cadvisor_dashboard_urls contains a list of URLs with Grafana dashboard definitions for the node exporter.
 # This role doesn't make use of this variable, but you can hook this into other roles.
 cadvisor_dashboard_urls:
-  - https://grafana.com/api/dashboards/14282/revisions/1/download
-  - https://grafana.com/api/dashboards/193/revisions/1/download
+  - https://grafana.com/api/dashboards/19792/revisions/1/download
