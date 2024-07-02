@@ -91,6 +91,27 @@ cadvisor_container_labels_metrics_middleware_basic_auth_users: ''
 #   another.label="here"
 cadvisor_container_labels_additional_labels: ''
 
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `cadvisor_container_labels_traefik_additional_response_headers_custom`
+cadvisor_container_labels_traefik_additional_request_headers: "{{ cadvisor_container_labels_traefik_additional_request_headers_auto | combine(cadvisor_container_labels_traefik_additional_request_headers_custom) }}"
+cadvisor_container_labels_traefik_additional_request_headers_auto: {}
+cadvisor_container_labels_traefik_additional_request_headers_custom: {}
+
+# Controls which additional headers to attach to all HTTP responses.
+# To add your own custom response headers, use `cadvisor_container_labels_traefik_additional_response_headers_custom`
+cadvisor_container_labels_traefik_additional_response_headers: "{{ cadvisor_container_labels_traefik_additional_response_headers_auto | combine(cadvisor_container_labels_traefik_additional_response_headers_custom) }}"
+cadvisor_container_labels_traefik_additional_response_headers_auto: |
+  {{
+    {}
+    | combine ({'X-XSS-Protection': cadvisor_http_header_xss_protection} if cadvisor_http_header_xss_protection else {})
+    | combine ({'X-Frame-Options': cadvisor_http_header_frame_options} if cadvisor_http_header_frame_options else {})
+    | combine ({'X-Content-Type-Options': cadvisor_http_header_content_type_options} if cadvisor_http_header_content_type_options else {})
+    | combine ({'Content-Security-Policy': cadvisor_http_header_content_security_policy} if cadvisor_http_header_content_security_policy else {})
+    | combine ({'Permission-Policy': cadvisor_http_header_content_permission_policy} if cadvisor_http_header_content_permission_policy else {})
+    | combine ({'Strict-Transport-Security': cadvisor_http_header_strict_transport_security} if cadvisor_http_header_strict_transport_security and cadvisor_container_labels_traefik_tls else {})
+  }}
+cadvisor_container_labels_traefik_additional_response_headers_custom: {}
+
 # A port number in the container
 cadvisor_container_http_port: 8080
 
