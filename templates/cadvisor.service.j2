@@ -18,10 +18,6 @@ ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_s
 
 ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create --rm --name {{ cadvisor_identifier }} \
 			--log-driver=none \
-			--user={{ cadvisor_uid }}:{{ cadvisor_gid }} \
-			--cap-drop=ALL \
-      --privileged \
-			--read-only \
 			{% for arg in cadvisor_container_extra_arguments %}
 			{{ arg }} \
 			{% endfor %}
