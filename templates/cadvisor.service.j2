@@ -16,8 +16,16 @@ Environment="HOME={{ devture_systemd_docker_base_systemd_unit_home_path }}"
 ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} stop --time={{ devture_systemd_docker_base_container_stop_grace_time_seconds }} {{ cadvisor_identifier }} 2>/dev/null || true'
 ExecStartPre=-{{ devture_systemd_docker_base_host_command_sh }} -c '{{ devture_systemd_docker_base_host_command_docker }} rm {{ cadvisor_identifier }} 2>/dev/null || true'
 
-ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create --rm --name {{ cadvisor_identifier }} \
+ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create \
+			--rm \
+			--name {{ cadvisor_identifier }} \
 			--log-driver=none \
+			{% if cadvisor_config_providers_docker_endpoint_is_unix_socket %}
+			--mount type=bind,src={{ cadvisor_config_providers_docker_endpoint | replace('unix://', '') }},dst=/var/run/docker.sock,ro \
+			{% else %}
+			--cap-drop=ALL \
+			--mount type=bind,source=/var/run,destination=/var/run,readonly \
+			{% endif %}
 			{% for arg in cadvisor_container_extra_arguments %}
 			{{ arg }} \
 			{% endfor %}
@@ -27,6 +35,7 @@ ExecStartPre={{ devture_systemd_docker_base_host_command_docker }} create --rm -
 			{% endif %}
 			--pid=host \
 			--label-file={{ cadvisor_base_path }}/labels \
+			--env-file={{ cadvisor_base_path }}/env \
 			{{ cadvisor_docker_image }} \
 			{{ cadvisor_process_extra_arguments|join(' ') }}
 

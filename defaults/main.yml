@@ -27,7 +27,7 @@ cadvisor_base_path: "/{{ cadvisor_identifier }}"
 # - or listens on a loopback interface only (--net=host and 127.0.0.1:9100), which is not reachable from a local Prometheus container
 #
 # Not using `--net=host` means that our network statistic reports are likely broken (inaccurate),
-# because node-exporter can't see all interfaces, etc.
+# because cadvisor can't see all interfaces, etc.
 # For now, we'll live with that, until someone develops a better solution.
 cadvisor_container_network: "{{ cadvisor_identifier }}"
 
@@ -69,7 +69,7 @@ cadvisor_systemd_wanted_services_list: []
 # See `../templates/labels.j2` for details.
 #
 # To inject your own other container labels, see `cadvisor_container_labels_additional_labels`.
-cadvisor_container_labels_traefik_enabled: "{{ true if cadvisor_hostname else false }}"
+cadvisor_container_labels_traefik_enabled: false
 cadvisor_container_labels_traefik_docker_network: "{{ cadvisor_container_network }}"
 cadvisor_container_labels_traefik_hostname: "{{ cadvisor_hostname }}"
 # The path prefix must either be `/` or not end with a slash (e.g. `/metrics`).
@@ -78,9 +78,16 @@ cadvisor_container_labels_traefik_rule: "Host(`{{ cadvisor_container_labels_trae
 cadvisor_container_labels_traefik_entrypoints: web-secure
 cadvisor_container_labels_traefik_tls: "{{ cadvisor_container_labels_traefik_entrypoints != 'web' }}"
 cadvisor_container_labels_traefik_tls_certResolver: default  # noqa var-naming
-cadvisor_container_labels_metrics_middleware_basic_auth_enabled: false
+cadvisor_container_labels_metrics_middleware_basic_auth_enabled: "{{ cadvisor_container_labels_traefik_enabled }}"
 # See: https://doc.traefik.io/traefik/middlewares/http/basicauth/#users
 cadvisor_container_labels_metrics_middleware_basic_auth_users: ''
+
+
+# Controls the `providers.docker.network` configuration option.
+cadvisor_config_providers_docker_network: "{{ devture_traefik_container_network }}"
+
+# Controls the `providers.docker.endpoint` configuration option.
+cadvisor_config_providers_docker_endpoint: unix:///var/run/docker.sock
 
 # cadvisor_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
 # See `../templates/labels.j2` for details.
@@ -90,6 +97,14 @@ cadvisor_container_labels_metrics_middleware_basic_auth_users: ''
 #   my.label=1
 #   another.label="here"
 cadvisor_container_labels_additional_labels: ''
+
+# Additional environment variables to pass to the cadvisor container.
+# You can use this to further influence the default configuration.
+#
+# Example:
+# cadvisor_environment_variables_extension: |
+#   CADVISOR_SOMETHING=true
+cadvisor_environment_variables_extension: ''
 
 # Controls which additional headers to attach to all HTTP requests.
 # To add your own custom request headers, use `cadvisor_container_labels_traefik_additional_response_headers_custom`

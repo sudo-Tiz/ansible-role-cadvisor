@@ -8,13 +8,16 @@
     owner: "{{ cadvisor_uid }}"
     group: "{{ cadvisor_gid }}"
 
-- name: Ensure cadvisor labels file is created
+- name: Ensure cadvisor support files created
   ansible.builtin.template:
-    src: "{{ role_path }}/templates/labels.j2"
-    dest: "{{ cadvisor_base_path }}/labels"
+    src: "{{ role_path }}/templates/{{ item }}.j2"
+    dest: "{{ cadvisor_base_path }}/{{ item }}"
     owner: "{{ cadvisor_uid }}"
     group: "{{ cadvisor_gid }}"
     mode: 0640
+  with_items:
+    - labels
+    - env
 
 - name: Ensure cadvisor image is pulled
   community.docker.docker_image:
