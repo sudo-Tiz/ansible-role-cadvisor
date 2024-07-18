@@ -1,15 +1,15 @@
 ---
-# Project source code URL: https://github.com/prometheus/node_exporter
+# Project source code URL: https://github.com/google/cadvisor
 
 cadvisor_enabled: true
 cadvisor_identifier: cadvisor
 
-cadvisor_uid: ''
-cadvisor_gid: ''
+cadvisor_uid: ""
+cadvisor_gid: ""
 
 # You don't need to configure a hostname and path prefix if you're not exposing this.
-cadvisor_hostname: ''
-cadvisor_path_prefix: "/metrics/cadvisor"
+cadvisor_hostname: ""
+cadvisor_path_prefix: ""
 
 cadvisor_version: v0.49.1
 cadvisor_docker_image: "{{ cadvisor_docker_image_name_prefix }}cadvisor/cadvisor:{{ cadvisor_version }}"
@@ -47,7 +47,7 @@ cadvisor_container_extra_arguments: "{{ cadvisor_container_extra_arguments_auto 
 cadvisor_container_extra_arguments_auto: []
 cadvisor_container_extra_arguments_custom: []
 
-# A list of extra arguments to pass to the node_exporter process
+# A list of extra arguments to pass to the cadvisor process
 #
 # Example:
 # cadvisor_process_extra_arguments:
@@ -69,7 +69,7 @@ cadvisor_systemd_wanted_services_list: []
 # See `../templates/labels.j2` for details.
 #
 # To inject your own other container labels, see `cadvisor_container_labels_additional_labels`.
-cadvisor_container_labels_traefik_enabled: false
+cadvisor_container_labels_traefik_enabled: "{{ true if cadvisor_hostname else false }}"
 cadvisor_container_labels_traefik_docker_network: "{{ cadvisor_container_network }}"
 cadvisor_container_labels_traefik_hostname: "{{ cadvisor_hostname }}"
 # The path prefix must either be `/` or not end with a slash (e.g. `/metrics`).
@@ -77,11 +77,10 @@ cadvisor_container_labels_traefik_path_prefix: "{{ cadvisor_path_prefix }}"
 cadvisor_container_labels_traefik_rule: "Host(`{{ cadvisor_container_labels_traefik_hostname }}`) && PathPrefix(`{{ cadvisor_container_labels_traefik_path_prefix | quote }}`)"
 cadvisor_container_labels_traefik_entrypoints: web-secure
 cadvisor_container_labels_traefik_tls: "{{ cadvisor_container_labels_traefik_entrypoints != 'web' }}"
-cadvisor_container_labels_traefik_tls_certResolver: default  # noqa var-naming
-cadvisor_container_labels_metrics_middleware_basic_auth_enabled: "{{ cadvisor_container_labels_traefik_enabled }}"
+cadvisor_container_labels_traefik_tls_certResolver: default # noqa var-naming
+cadvisor_container_labels_middleware_basic_auth_enabled: "{{ cadvisor_container_labels_traefik_enabled }}"
 # See: https://doc.traefik.io/traefik/middlewares/http/basicauth/#users
-cadvisor_container_labels_metrics_middleware_basic_auth_users: ''
-
+cadvisor_container_labels_middleware_basic_auth_users: ""
 
 # Controls the `providers.docker.network` configuration option.
 cadvisor_config_providers_docker_network: "{{ devture_traefik_container_network }}"
@@ -96,7 +95,7 @@ cadvisor_config_providers_docker_endpoint: unix:///var/run/docker.sock
 # cadvisor_container_labels_additional_labels: |
 #   my.label=1
 #   another.label="here"
-cadvisor_container_labels_additional_labels: ''
+cadvisor_container_labels_additional_labels: ""
 
 # Additional environment variables to pass to the cadvisor container.
 # You can use this to further influence the default configuration.
@@ -104,37 +103,16 @@ cadvisor_container_labels_additional_labels: ''
 # Example:
 # cadvisor_environment_variables_extension: |
 #   CADVISOR_SOMETHING=true
-cadvisor_environment_variables_extension: ''
-
-# Controls which additional headers to attach to all HTTP requests.
-# To add your own custom request headers, use `cadvisor_container_labels_traefik_additional_response_headers_custom`
-cadvisor_container_labels_traefik_additional_request_headers: "{{ cadvisor_container_labels_traefik_additional_request_headers_auto | combine(cadvisor_container_labels_traefik_additional_request_headers_custom) }}"
-cadvisor_container_labels_traefik_additional_request_headers_auto: {}
-cadvisor_container_labels_traefik_additional_request_headers_custom: {}
-
-# Controls which additional headers to attach to all HTTP responses.
-# To add your own custom response headers, use `cadvisor_container_labels_traefik_additional_response_headers_custom`
-cadvisor_container_labels_traefik_additional_response_headers: "{{ cadvisor_container_labels_traefik_additional_response_headers_auto | combine(cadvisor_container_labels_traefik_additional_response_headers_custom) }}"
-cadvisor_container_labels_traefik_additional_response_headers_auto: |
-  {{
-    {}
-    | combine ({'X-XSS-Protection': cadvisor_http_header_xss_protection} if cadvisor_http_header_xss_protection else {})
-    | combine ({'X-Frame-Options': cadvisor_http_header_frame_options} if cadvisor_http_header_frame_options else {})
-    | combine ({'X-Content-Type-Options': cadvisor_http_header_content_type_options} if cadvisor_http_header_content_type_options else {})
-    | combine ({'Content-Security-Policy': cadvisor_http_header_content_security_policy} if cadvisor_http_header_content_security_policy else {})
-    | combine ({'Permission-Policy': cadvisor_http_header_content_permission_policy} if cadvisor_http_header_content_permission_policy else {})
-    | combine ({'Strict-Transport-Security': cadvisor_http_header_strict_transport_security} if cadvisor_http_header_strict_transport_security and cadvisor_container_labels_traefik_tls else {})
-  }}
-cadvisor_container_labels_traefik_additional_response_headers_custom: {}
+cadvisor_environment_variables_extension: ""
 
 # A port number in the container
 cadvisor_container_http_port: 8080
 
-# Controls whether the cadvisor container exposes its HTTP port (tcp/9100 in the container).
-# Takes an "<ip>:<port>" value (e.g. "127.0.0.1:9100"), just a port number or empty string to not expose.
-cadvisor_container_http_host_bind_port: ''
+# Controls whether the cadvisor container exposes its HTTP port (tcp/8080 in the container).
+# Takes an "<ip>:<port>" value (e.g. "127.0.0.1:8080"), just a port number or empty string to not expose.
+cadvisor_container_http_host_bind_port: ""
 
-# cadvisor_dashboard_urls contains a list of URLs with Grafana dashboard definitions for the node exporter.
+# cadvisor_dashboard_urls contains a list of URLs with Grafana dashboard definitions for the cadvisor.
 # This role doesn't make use of this variable, but you can hook this into other roles.
 cadvisor_dashboard_urls:
   - https://grafana.com/api/dashboards/193/revisions/1/download
