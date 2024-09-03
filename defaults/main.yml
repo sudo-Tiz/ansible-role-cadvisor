@@ -103,7 +103,8 @@ cadvisor_container_labels_additional_labels: ""
 # Example:
 # cadvisor_environment_variables_extension: |
 #   CADVISOR_SOMETHING=true
-cadvisor_environment_variables_extension: ""
+cadvisor_environment_variables_extension: |
+  CADVISOR_HEALTHCHECK_URL=http://localhost:{{ cadvisor_container_http_port }}/healthz
 
 # A port number in the container
 cadvisor_container_http_port: 8080
